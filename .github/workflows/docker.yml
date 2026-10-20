@@ -79,6 +79,7 @@ jobs:
             type=ref,event=branch,enable=${{ github.ref == 'refs/heads/dev' }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -88,3 +89,15 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Smoke test published image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+        run: |
+          trap 'docker logs notetrace-smoke; docker rm -f notetrace-smoke' EXIT
+          docker run --detach --name notetrace-smoke --publish 127.0.0.1:3004:3004 "$IMAGE"
+          curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 2 \
+            --retry-max-time 90 http://127.0.0.1:3004/api/health --output /tmp/notetrace-health.json
+          node -e 'const health = JSON.parse(require("fs").readFileSync("/tmp/notetrace-health.json")); if (health.ok !== true) process.exit(1);'
+          curl --fail --silent --show-error http://127.0.0.1:3004/ --output /tmp/notetrace-index.html
+          grep -qi '<html' /tmp/notetrace-index.html
