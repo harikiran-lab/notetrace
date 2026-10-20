@@ -10,6 +10,20 @@ import { TRACE_ACTIONS } from '../src/lib/trace-prompts.js';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
+test('pending Ask Trace work prevents backdrop, Escape and back dismissal', () => {
+  const editor = read('../src/components/notes/NoteEditor.svelte');
+  const actions = read('../src/components/notes/TraceActions.svelte');
+  const popover = read('../src/components/notes/Popover.svelte');
+  assert.match(editor, /<Popover bind:open=\{traceOpen\}[^\n]*dismissible=\{!traceBusy\}/);
+  assert.match(editor, /<TraceActions[^\n]*bind:busy=\{traceBusy\}/);
+  assert.match(actions, /export let busy = false;/);
+  assert.match(actions, /finally \{\s*busy = false;/, 'errors also release the dismissal guard');
+  assert.match(popover, /export let dismissible = true;/, 'other menus retain normal dismissal');
+  assert.match(popover, /function close\(\) \{\s*if \(!dismissible\) return;\s*open = false;/);
+  assert.match(popover, /on:click\|self=\{close\} use:closeOnBack=\{close\}/);
+  assert.match(popover, /e\.key === 'Escape'\) \{ e\.stopPropagation\(\); close\(\);/);
+});
+
 test('Expand turns the note into full sentences without adding facts', () => {
   const a = TRACE_ACTIONS.expand;
   assert.match(a.system, /^You expand notes/);
