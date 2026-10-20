@@ -10,18 +10,15 @@ import { TRACE_ACTIONS } from '../src/lib/trace-prompts.js';
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 
-test('pending Ask Trace work prevents backdrop, Escape and back dismissal', () => {
+test('Ask Trace can close while its per-note session retains the request', () => {
   const editor = read('../src/components/notes/NoteEditor.svelte');
   const actions = read('../src/components/notes/TraceActions.svelte');
-  const popover = read('../src/components/notes/Popover.svelte');
-  assert.match(editor, /<Popover bind:open=\{traceOpen\}[^\n]*dismissible=\{!traceBusy\}/);
-  assert.match(editor, /<TraceActions[^\n]*bind:busy=\{traceBusy\}/);
-  assert.match(actions, /export let busy = false;/);
-  assert.match(actions, /finally \{\s*busy = false;/, 'errors also release the dismissal guard');
-  assert.match(popover, /export let dismissible = true;/, 'other menus retain normal dismissal');
-  assert.match(popover, /function close\(\) \{\s*if \(!dismissible\) return;\s*open = false;/);
-  assert.match(popover, /on:click\|self=\{close\} use:closeOnBack=\{close\}/);
-  assert.match(popover, /e\.key === 'Escape'\) \{ e\.stopPropagation\(\); close\(\);/);
+  assert.doesNotMatch(editor, /dismissible=\{!traceBusy\}/);
+  assert.match(editor, /<TraceActions[^\n]*\{noteId\}/);
+  assert.match(actions, /traceSessions\.forNote\(traceNoteKey\(noteId\)/);
+  assert.match(actions, /await session\.run\(kind, \{ title, body, instruction, request: askTrace \}\)/);
+  assert.match(read('../src/lib/user-state.js'), /traceSessions\.clear\(\)/);
+  assert.match(editor, /!traceSessions\.hasWork\(traceNoteKey\(noteId\)\)/, 'a pending request keeps an otherwise empty note available');
 });
 
 test('Expand turns the note into full sentences without adding facts', () => {
@@ -54,7 +51,7 @@ test('the menu offers them in order, and a Custom Instruction can go below the n
   assert.match(ta, /e\.key === 'Enter' && !e\.shiftKey && !e\.isComposing && e\.keyCode !== 229/);
   assert.match(ta, /enterkeyhint="send"/);
   // From a result, Back returns to the instruction (kept) to change it.
-  assert.match(ta, /\{#if action === 'custom'\}\s*<!-- Back to the instruction, kept, to change it\. -->\s*<button class="btn btn-secondary" on:click=\{\(\) => \{ asking = true; action = null;/);
+  assert.match(ta, /\{#if action === 'custom'\}\s*<!-- Back to the instruction, kept, to change it\. -->\s*<button class="btn btn-secondary" on:click=\{\(\) => \{ session\.patch\(\{ asking: true, action: null \}\);/);
   assert.match(ta, /apply\('append'\)\}>\{\$_\('trace_actions\.add_below'\)\}/);
   assert.match(read('../src/components/notes/NoteEditor.svelte'), /on:append=\{\(e\) => applyTraceText\(body\.trim\(\) \? `\$\{body\.replace\(\/\\s\+\$\/, ''\)\}\\n\\n\$\{e\.detail\.markdown\}` : e\.detail\.markdown\)\}/);
   const en = JSON.parse(read('../src/i18n/en.json')).trace_actions;

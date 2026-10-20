@@ -1286,6 +1286,7 @@
 <ActionSheet bind:open={templatePickerOpen} title={$_('templates.new_from')} actions={templateActions} on:select={onTemplatePick} />
 
 <style>
+  .notes-header { border-radius: var(--radius-lg); }
   /* Search in the banner */
   .notes-header .header-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .notes-header .header-btn { border-radius: 12px; color: var(--text-2); display: flex; align-items: center; justify-content: center; transition: background var(--dur-fast), color var(--dur-fast); }

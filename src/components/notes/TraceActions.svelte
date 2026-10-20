@@ -7,38 +7,31 @@
    */
   import { createEventDispatcher, tick } from 'svelte';
   import { _ } from 'svelte-i18n';
-  import { askTrace, TRACE_ACTIONS, cleanTraceReply, checklistLines } from '../../lib/trace-run.js';
+  import { askTrace, checklistLines } from '../../lib/trace-run.js';
   import { markdownToPreview } from '../../lib/note-preview.js';
+  import { traceSessions, traceNoteKey } from '../../lib/trace-sessions.js';
 
   export let title = '';
   export let body = '';
+  export let noteId = null;
 
   const dispatch = createEventDispatcher();
   let action = null;     // 'tidy' | 'expand' | 'summarize' | 'checklist' | 'custom'
-  export let busy = false;
+  let busy = false;
   let result = '';
   let error = '';
   // Your own instruction: typed first, then run like the others.
   let instruction = '';
   let asking = false;
   let instructionEl;
+  const session = traceSessions.forNote(traceNoteKey(noteId) ?? Symbol('unsaved-note'));
+  $: ({ action, busy, result, instruction, asking } = $session);
+  $: error = $session.failure === 'empty' ? $_('trace_actions.empty')
+    : $session.failure ? ($session.error || $_('trace_actions.failed')) : '';
 
   async function run(kind) {
     if (kind === 'custom' && !instruction.trim()) return;
-    action = kind;
-    asking = false;
-    busy = true;
-    result = '';
-    error = '';
-    try {
-      const a = TRACE_ACTIONS[kind];
-      result = cleanTraceReply(await askTrace({ systemPrompt: a.system, prompt: a.prompt(title, body, instruction) }));
-      if (!result) error = $_('trace_actions.empty');
-    } catch (e) {
-      error = e?.message || $_('trace_actions.failed');
-    } finally {
-      busy = false;
-    }
+    await session.run(kind, { title, body, instruction, request: askTrace });
   }
 
   $: items = action === 'checklist' ? checklistLines(result) : [];
@@ -51,7 +44,7 @@
   }
 
   async function ask() {
-    asking = true;
+    session.patch({ asking: true });
     await tick();
     instructionEl?.focus();
   }
@@ -68,9 +61,9 @@
     <p class="ta-title">{$_('trace_actions.custom')}</p>
     <textarea class="input ta-instruction" dir="auto" rows="3" enterkeyhint="send" bind:this={instructionEl} bind:value={instruction}
       maxlength="2000" placeholder={$_('trace_actions.custom_placeholder')} aria-label={$_('trace_actions.custom')}
-      on:keydown={onInstructionKey}></textarea>
+      on:keydown={onInstructionKey} on:input={(e) => session.patch({ instruction: e.currentTarget.value })}></textarea>
     <div class="ta-buttons">
-      <button class="btn btn-secondary" on:click={() => asking = false}>{$_('common.back')}</button>
+      <button class="btn btn-secondary" on:click={() => session.patch({ asking: false })}>{$_('common.back')}</button>
       <button class="btn btn-primary" on:click={() => run('custom')} disabled={!instruction.trim()}>{$_('trace_actions.custom_go')}</button>
     </div>
   {:else if !action}
@@ -103,7 +96,7 @@
     {:else if error}
       <p class="ta-error" role="alert">{error}</p>
       <div class="ta-buttons">
-        <button class="btn btn-secondary" on:click={() => { if (action === 'custom') asking = true; action = null; }}>{$_('common.back')}</button>
+        <button class="btn btn-secondary" on:click={() => session.patch({ asking: action === 'custom', action: null })}>{$_('common.back')}</button>
         <button class="btn btn-primary" on:click={() => run(action)}>{$_('trace_actions.try_again')}</button>
       </div>
     {:else}
@@ -117,8 +110,9 @@
       <div class="ta-buttons">
         {#if action === 'custom'}
           <!-- Back to the instruction, kept, to change it. -->
-          <button class="btn btn-secondary" on:click={() => { asking = true; action = null; tick().then(() => instructionEl?.focus()); }}>{$_('common.back')}</button>
+          <button class="btn btn-secondary" on:click={() => { session.patch({ asking: true, action: null }); tick().then(() => instructionEl?.focus()); }}>{$_('common.back')}</button>
         {:else}
+          <button class="btn btn-secondary" on:click={() => session.patch({ action: null })}>{$_('common.back')}</button>
           <button class="btn btn-secondary" on:click={() => dispatch('close')}>{$_('common.cancel')}</button>
         {/if}
         <button class="btn btn-secondary" on:click={() => run(action)}>{$_('trace_actions.try_again')}</button>

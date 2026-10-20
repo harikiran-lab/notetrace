@@ -40,6 +40,8 @@
   import { ensureReminderPermission, rescheduleReminders } from '../../lib/note-reminders.js';
   import ShareDialog from './ShareDialog.svelte';
   import TraceActions from './TraceActions.svelte';
+  import { traceSessions, traceNoteKey } from '../../lib/trace-sessions.js';
+  import { visibleToolbarCount } from '../../lib/toolbar-fit.js';
   import CooktraceSend from './CooktraceSend.svelte';
   import { cooktraceLink, cooktraceOn, loadCooktraceLink } from '../../lib/cooktrace.js';
   import VoiceRecorder from './VoiceRecorder.svelte';
@@ -117,7 +119,6 @@
   let saving = false;
   let showHistory = false;
   let colorOpen = false, labelsOpen = false, reminderOpen = false, shareOpen = false, traceOpen = false, recordOpen = false, cookOpen = false;
-  let traceBusy = false;
   let colorAnchor = null, labelsAnchor = null, reminderAnchor = null, shareAnchor = null, traceAnchor = null, recordAnchor = null, cookAnchor = null;
   let narrow = typeof window !== 'undefined' && window.innerWidth < 600;
 
@@ -736,6 +737,7 @@
   async function openTrace(e) {
     traceAnchor = e.currentTarget.getBoundingClientRect();
     await flushAll();
+    if (!noteId) await enqueue(ensureNote);
     traceOpen = true;
   }
   // A Trace rewrite always leaves a restore point, however recent the last edit.
@@ -967,7 +969,7 @@
       try { await NoteApi.updateNote(noteId, { title, rename_links_from: renamedFrom }); } catch { /* links can be fixed by hand */ }
     }
     // A note that ended up empty is removed instead of lingering as a blank card.
-    if (!skipDiscard && noteId && !trashed && !hasPendingFor(noteId) && isEmptyNote({ title, body_md: body, items, attachments })) {
+    if (!skipDiscard && noteId && !trashed && !hasPendingFor(noteId) && !traceSessions.hasWork(traceNoteKey(noteId)) && isEmptyNote({ title, body_md: body, items, attachments })) {
       try { await NoteApi.deleteNoteForever(noteId); } catch { /* best effort */ }
       noteId = null;
     }
@@ -1036,7 +1038,32 @@
   // A narrow editor card (beside a half-open fold) uses the phone's compact toolbar.
   let panelW = 0;
   $: compactBar = narrow || (!inline && panelW > 0 && panelW < 560);
-  $: tightBar = inline && barW < 600;
+  $: readerActions = [
+    { key: 'pin', icon: 'keep', label: pinned ? $_('notes.unpin') : $_('notes.pin'), pressed: pinned, run: togglePin },
+    ...(isOwner ? [{ key: 'reminder', icon: 'notification_add', label: $_('reminders.remind_me'), run: openReminder }] : []),
+    ...($traceReady && kind === 'text' && !contentLocked && body.trim() ? [{ key: 'trace', icon: 'auto_awesome', label: $_('trace_actions.title'), run: openTrace }] : []),
+    ...(!contentLocked ? [{ key: 'convert', icon: kind === 'text' ? 'checklist' : 'notes', label: kind === 'text' ? $_('notes.to_checklist') : $_('notes.to_text'), run: () => convert() }] : []),
+    ...(noteId && !baseLocked ? [{ key: 'readonly', icon: 'edit_off', label: $_('notes.read_only'), pressed: readOnlyNote, run: toggleReadOnly }] : []),
+    ...($sharingAvailable ? [{ key: 'share', icon: 'person_add', label: $_('sharing.share'), run: openShare }] : []),
+    ...(!contentLocked ? [
+      { key: 'image', icon: 'add_photo_alternate', label: $_('attachments.add_image'), run: () => imageInput.click() },
+      { key: 'file', icon: 'attach_file', label: $_('files.attach'), run: openFilePicker },
+      { key: 'drawing', icon: 'draw', label: $_('drawing.new'), run: newDrawing },
+      ...(canRecord ? [{ key: 'voice', icon: 'mic', label: $_('voice.record'), run: openRecorder }] : []),
+    ] : []),
+    ...(!baseLocked ? [{ key: 'color', icon: 'palette', label: $_('notes.color'), run: openColor }] : []),
+    { key: 'labels', icon: 'label', label: $_('notes.labels'), run: openLabels },
+    ...(canShowInTasks ? [{ key: 'tasks', icon: 'task_alt', label: $_('tasks.show_in_tasks'), pressed: inTasks, run: toggleInTasks }] : []),
+    ...(cooktraceOn($cooktraceLink) && kind === 'checklist' ? [{ key: 'cooktrace', icon: 'add_shopping_cart', label: $_('cooktrace.send'), run: openCooktrace }] : []),
+    { key: 'archive', icon: archived ? 'unarchive' : 'archive', label: archived ? $_('notes.unarchive') : $_('notes.archive'), run: archive },
+    { key: 'print', icon: 'print', label: $_('print.print'), run: printThis },
+    ...(canTemplate({ title, body_md: body, kind, items }) ? [{ key: 'template', icon: 'note_stack_add', label: $_('templates.save_as'), run: saveAsTemplate }] : []),
+    ...(noteId ? [{ key: 'history', icon: 'history', label: $_('notes.version_history'), run: async () => { await flushAll(); showHistory = true; } }] : []),
+    ...(isOwner ? [{ key: 'trash', icon: 'delete', label: $_('notes.move_to_trash'), danger: true, run: trash }] : []),
+  ];
+  $: readerVisibleCount = visibleToolbarCount(barW, readerActions.length);
+  $: readerVisible = readerActions.slice(0, readerVisibleCount);
+  $: readerOverflow = readerActions.slice(readerVisibleCount);
   // The desktop editor's own bar (not the phone bar or the list pane's): what it shows stays out of the More menu.
   $: fullBar = !inline && !compactBar;
   /** Save anything pending, for switching notes in the side pane. */
@@ -1179,53 +1206,22 @@
             {/if}
             <span class="crumb-text">{crumb}</span>
           </span>
-          <span class="edited" aria-live="polite">
+          {#if barW >= 1100}<span class="edited" aria-live="polite">
             {#if saving}{$_('notes.saving')}{:else if updatedAt}{$_('notes.edited', { values: { when: relativeTime(updatedAt).toLowerCase() } })}{/if}
-          </span>
+          </span>{/if}
           <span class="spacer"></span>
-          <button class="icon-btn" class:on={pinned} on:click={togglePin}
-            title={pinned ? $_('notes.unpin') : $_('notes.pin')} aria-label={pinned ? $_('notes.unpin') : $_('notes.pin')} aria-pressed={pinned}>
-            <span class="material-symbols-rounded" class:fill={pinned}>keep</span>
-          </button>
-          {#if isOwner}
-            <button class="icon-btn" on:click={openReminder} title={$_('reminders.remind_me')} aria-label={$_('reminders.remind_me')}>
-              <span class="material-symbols-rounded">notification_add</span>
+          {#each readerVisible as action (action.key)}
+            <button class="icon-btn" class:on={action.pressed} class:danger={action.danger}
+              on:click={action.run} title={action.label} aria-label={action.label} aria-pressed={action.pressed}
+              data-record={action.key === 'voice' ? '' : undefined}>
+              <span class="material-symbols-rounded" class:fill={action.pressed}>{action.icon}</span>
             </button>
-          {/if}
-          {#if $sharingAvailable && !tightBar}
-            <button class="icon-btn" on:click={openShare} title={$_('sharing.share')} aria-label={$_('sharing.share')}>
-              <span class="material-symbols-rounded">person_add</span>
-            </button>
-          {/if}
-          {#if !contentLocked && !tightBar}
-            <button class="icon-btn" on:click={() => imageInput.click()} title={$_('attachments.add_image')} aria-label={$_('attachments.add_image')}>
-              <span class="material-symbols-rounded">add_photo_alternate</span>
-            </button>
-            <button class="icon-btn" on:click={openFilePicker} title={$_('files.attach')} aria-label={$_('files.attach')}>
-              <span class="material-symbols-rounded">attach_file</span>
-            </button>
-            <button class="icon-btn" on:click={newDrawing} title={$_('drawing.new')} aria-label={$_('drawing.new')}>
-              <span class="material-symbols-rounded">draw</span>
-            </button>
-            {#if canRecord}
-              <button class="icon-btn" data-record on:click={openRecorder} title={$_('voice.record')} aria-label={$_('voice.record')}>
-                <span class="material-symbols-rounded">mic</span>
-              </button>
-            {/if}
-          {/if}
-          {#if !baseLocked && !tightBar}
-            <button class="icon-btn" on:click={openColor} title={$_('notes.color')} aria-label={$_('notes.color')}>
-              <span class="material-symbols-rounded">palette</span>
-            </button>
-          {/if}
-          {#if !tightBar}
-            <button class="icon-btn" on:click={openLabels} title={$_('notes.labels')} aria-label={$_('notes.labels')}>
-              <span class="material-symbols-rounded">label</span>
-            </button>
-          {/if}
+          {/each}
+          {#if readerOverflow.length}
           <button class="icon-btn" on:click={openMore} title={$_('notes.more_options')} aria-label={$_('notes.more_options')} aria-haspopup="menu">
             <span class="material-symbols-rounded">more_horiz</span>
           </button>
+          {/if}
           <span class="bar-sep" aria-hidden="true"></span>
           <button class="icon-btn" on:click={() => close()} title={$_('common.close')} aria-label={$_('common.close')}>
             <span class="material-symbols-rounded">close</span>
@@ -1540,50 +1536,23 @@
 </Popover>
 <Popover bind:open={moreOpen} anchor={moreAnchor} label={$_('notes.more_options')}>
   <div class="sheet-menu">
+    {#if inline}
+      {#each readerOverflow as action (action.key)}
+        <button class="sheet-item" class:danger={action.danger}
+          role={typeof action.pressed === 'boolean' ? 'menuitemcheckbox' : 'menuitem'} aria-checked={action.pressed}
+          on:click={() => fromSheet(action.run, moreAnchor)}>
+          <span class="material-symbols-rounded" class:fill={action.pressed}>{action.icon}</span>{action.label}
+          {#if action.pressed}<span class="material-symbols-rounded sheet-check">check</span>{/if}
+        </button>
+      {/each}
+    {:else}
     {#if canShowInTasks && !fullBar}
       <button class="sheet-item" role="menuitemcheckbox" aria-checked={inTasks} on:click={() => { toggleInTasks(); moreOpen = false; }}>
         <span class="material-symbols-rounded" class:fill={inTasks}>task_alt</span>{$_('tasks.show_in_tasks')}
         {#if inTasks}<span class="material-symbols-rounded sheet-check">check</span>{/if}
       </button>
     {/if}
-    {#if inline}
-      {#if tightBar}
-        {#if !contentLocked}
-          <button class="sheet-item" on:click={() => fromSheet(() => imageInput.click(), moreAnchor)}>
-            <span class="material-symbols-rounded">add_photo_alternate</span>{$_('attachments.add_image')}
-          </button>
-          <button class="sheet-item" on:click={() => { moreOpen = false; openFilePicker(); }}>
-            <span class="material-symbols-rounded">attach_file</span>{$_('files.attach')}
-          </button>
-          <button class="sheet-item" on:click={() => { moreOpen = false; newDrawing(); }}>
-            <span class="material-symbols-rounded">draw</span>{$_('drawing.new')}
-          </button>
-          {#if canRecord}
-            <button class="sheet-item" on:click={() => fromSheet(openRecorder, moreAnchor)}>
-              <span class="material-symbols-rounded">mic</span>{$_('voice.record')}
-            </button>
-          {/if}
-        {/if}
-        {#if !baseLocked}
-          <button class="sheet-item" on:click={() => fromSheet(openColor, moreAnchor)}>
-            <span class="material-symbols-rounded">palette</span>{$_('notes.color')}
-          </button>
-        {/if}
-        <button class="sheet-item" on:click={() => fromSheet(openLabels, moreAnchor)}>
-          <span class="material-symbols-rounded">label</span>{$_('notes.labels')}
-        </button>
-        {#if $sharingAvailable}
-          <button class="sheet-item" on:click={() => fromSheet(openShare, moreAnchor)}>
-            <span class="material-symbols-rounded">person_add</span>{$_('sharing.share')}
-          </button>
-        {/if}
-      {/if}
-      {#if !contentLocked}
-        <button class="sheet-item" on:click={() => fromSheet(() => convert(), moreAnchor)}>
-          <span class="material-symbols-rounded">{kind === 'text' ? 'checklist' : 'notes'}</span>{kind === 'text' ? $_('notes.to_checklist') : $_('notes.to_text')}
-        </button>
-      {/if}
-    {:else if !fullBar}
+    {#if !fullBar}
     <button class="sheet-item" on:click={() => fromSheet(openLabels, moreAnchor)}>
       <span class="material-symbols-rounded">label</span>{$_('notes.labels')}
     </button>
@@ -1630,6 +1599,7 @@
         <span class="material-symbols-rounded">delete</span>{$_('notes.move_to_trash')}
       </button>
     {/if}
+    {/if}
   </div>
 </Popover>
 <Popover bind:open={colorOpen} anchor={colorAnchor} label={$_('notes.color')}>
@@ -1644,9 +1614,9 @@
     <VoiceRecorder canAddFile={!contentLocked} on:done={onRecorded} on:cancel={onRecordCancel} on:file={openAudioPicker} />
   {/if}
 </Popover>
-<Popover bind:open={traceOpen} anchor={traceAnchor} label={$_('trace_actions.title')} dismissible={!traceBusy}>
+<Popover bind:open={traceOpen} anchor={traceAnchor} label={$_('trace_actions.title')}>
   {#if traceOpen}
-    <TraceActions {title} {body} bind:busy={traceBusy}
+    <TraceActions {title} {body} {noteId}
       on:replace={(e) => applyTraceText(e.detail.markdown)}
       on:prepend={(e) => applyTraceText(`${e.detail.markdown}\n\n${body}`)}
       on:append={(e) => applyTraceText(body.trim() ? `${body.replace(/\s+$/, '')}\n\n${e.detail.markdown}` : e.detail.markdown)}
@@ -1717,17 +1687,19 @@
     height: 58px; padding: 0 12px 0 32px;
     border-bottom: 1px solid var(--note-border);
   }
-  .crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; font-weight: 600; color: var(--text-2); }
+  .crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex: 0 0 96px; font-size: 13px; font-weight: 600; color: var(--text-2); }
   .crumb .material-symbols-rounded { font-size: 17px; color: var(--note-glow, var(--accent)); }
   .crumb-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .reader-bar .edited { margin-left: 12px; overflow: hidden; text-overflow: ellipsis; }
-  .reader-bar .icon-btn { width: 36px; height: 36px; border-radius: 10px; }
+  .reader-bar .edited { margin-left: 12px; flex: 0 0 124px; overflow: hidden; text-overflow: ellipsis; }
+  .reader-bar .icon-btn { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; }
   .reader-bar .icon-btn .material-symbols-rounded { font-size: 21px; }
   .bar-sep { width: 1px; height: 22px; background: var(--note-border); margin: 0 6px; }
   .inline .editor-top { padding-top: 26px; }
-  @media (max-width: 1320px) { .reader-bar .edited { display: none; } }
   .reader-bar.tight { padding-left: 20px; }
-  .reader-bar.tight .crumb { flex-shrink: 1; }
+  .reader-bar.tight .crumb { flex-basis: 24px; }
+  .reader-bar.tight .crumb-text { display: none; }
+  .reader-bar.tight .icon-btn { width: 44px; height: 44px; }
+  .reader-bar .icon-btn.danger { color: var(--danger); }
   .editor-backdrop {
     position: fixed; inset: 0; z-index: 200;
     background: rgba(0, 0, 0, 0.55);

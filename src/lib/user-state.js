@@ -18,5 +18,6 @@ export async function resetUserState() {
     import('../stores/settings.js').then(m => m.reloadSettingStores?.({ force: true })),
     import('../stores/notes.js').then(m => { m.clearLabels?.(); m.signalNotesChanged?.(); }),
     import('./cooktrace.js').then(m => m.resetCooktraceState?.()),
+    import('./trace-sessions.js').then(m => m.traceSessions.clear()),
   ]);
 }
