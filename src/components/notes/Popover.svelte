@@ -16,13 +16,19 @@
   export let anchor = null;
   /** Its name for screen readers, like the button that opened it. */
   export let label = '';
+  /** Keep pending work mounted until its result or error is ready. */
+  export let dismissible = true;
 
   const dispatch = createEventDispatcher();
   let panel;
   let style = '';
   let narrow = false;
 
-  function close() { open = false; dispatch('close'); }
+  function close() {
+    if (!dismissible) return;
+    open = false;
+    dispatch('close');
+  }
 
   // The part of the screen a keyboard leaves free. Contents size to it through
   // --pop-avail (the label list shrinks and scrolls rather than hiding).

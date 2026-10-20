@@ -15,7 +15,7 @@
 
   const dispatch = createEventDispatcher();
   let action = null;     // 'tidy' | 'expand' | 'summarize' | 'checklist' | 'custom'
-  let busy = false;
+  export let busy = false;
   let result = '';
   let error = '';
   // Your own instruction: typed first, then run like the others.
