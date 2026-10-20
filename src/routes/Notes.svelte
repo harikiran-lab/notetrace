@@ -478,10 +478,15 @@
       return;
     }
     const id = Number(params.get('note'));
-    if (!id || editing) return;
+    const trace = params.get('trace') === '1';
+    if (!id || (editing && !trace)) return;
     try {
+      if (trace) { await overlayRef?.flush?.(); await paneRef?.flush?.(); }
       const n = await NoteApi.getNote(id);
-      if (n) editing = { note: n };
+      if (n) {
+        if (trace && splitPane) await openInPane({ note: n, autoTrace: true });
+        else editing = { note: n, autoTrace: trace };
+      }
     } catch { /* note gone */ }
     replaceRoute(path);
   }
@@ -1020,7 +1025,7 @@
         <div class="pane">
           {#if pane}
             {#key paneKey}
-              <NoteEditor bind:this={paneRef} inline autoRecord={!!pane.voice} autoDraw={!!pane.drawing} note={pane.note || null} initialKind={pane.kind || 'text'}
+              <NoteEditor bind:this={paneRef} inline autoTrace={!!pane.autoTrace} autoRecord={!!pane.voice} autoDraw={!!pane.drawing} note={pane.note || null} initialKind={pane.kind || 'text'}
                 initialLabels={pane.labels || []} prefill={pane.prefill || null} on:close={closePane} />
             {/key}
           {:else}
@@ -1155,7 +1160,7 @@
   <!-- Keyed per open: reopening while the last editor is still fading out
        would otherwise resume that editor with the previous note's state. -->
   {#key editing}
-    <NoteEditor bind:this={overlayRef} autoRecord={!!editing.voice} autoDraw={!!editing.drawing} note={editing.note || null} initialKind={editing.kind || 'text'} initialLabels={editing.labels || []}
+    <NoteEditor bind:this={overlayRef} autoTrace={!!editing.autoTrace} autoRecord={!!editing.voice} autoDraw={!!editing.drawing} note={editing.note || null} initialKind={editing.kind || 'text'} initialLabels={editing.labels || []}
       prefill={editing.prefill || null} originId={editing.originId ?? null} on:close={closeEditor} />
   {/key}
 {/if}

@@ -17,7 +17,7 @@
   import { showSuccess, showError } from '../../stores/toast.js';
   import { isNative, getServerUrl, getAuthToken, apiUrl } from '../../lib/platform.js';
   import {
-    notifLocalEnabled, notifPushService,
+    notifLocalEnabled, notifTraceResults, notifPushService,
     appriseUrl, appriseTag,
     gotifyUrl, gotifyToken,
     ntfyUrl, ntfyTopic, ntfyToken,
@@ -163,6 +163,16 @@
         {/if}
       </div>
     {/if}
+  </div>
+
+  <div class="card settings-card">
+    <div class="setting-row">
+      <div>
+        <span class="setting-label">{$_('settings_notifications.trace_results')}</span>
+        <span class="setting-desc">{$_('settings_notifications.trace_results_desc')}</span>
+      </div>
+      <Toggle label={$_('settings_notifications.trace_results')} checked={$notifTraceResults} on:change={e => notifTraceResults.set(e.detail)} />
+    </div>
   </div>
 
   <p class="settings-group-heading">{$_('settings_notifications.push_service')}</p>

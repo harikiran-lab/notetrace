@@ -52,6 +52,7 @@ export const DEVICE_PREFS = new Set([
   'appLockEnabled',        // Android-only: require biometric / device credential to open the app
   'appLockTimeoutMin',     // minutes in the background before the lock re-engages (0 = immediately)
   'notifLocalEnabled',     // reminder notifications on this device (phone, or this browser while open)
+  'notifTraceResults',     // Ask Trace completions on this device
   'notesLayout',           // 'grid', 'list', or 'timeline' on the notes screens (the last one picked)
   'notesLayoutBySize',     // the layout picked for each size class, so a foldable's two screens keep their own
   'listGroupBy',           // List layout sections: 'none', 'label', 'color', 'date'
@@ -475,6 +476,7 @@ export const aiTranscribeModel = createSettingStore('aiTranscribeModel', '');
 
 // Notifications
 export const notifLocalEnabled = createSettingStore('notifLocalEnabled', true);
+export const notifTraceResults = createSettingStore('notifTraceResults', true);
 export const notifPushService  = createSettingStore('notifPushService',  'none');
 export const appriseUrl  = createSettingStore('appriseUrl',  '');
 export const appriseTag  = createSettingStore('appriseTag',  '');

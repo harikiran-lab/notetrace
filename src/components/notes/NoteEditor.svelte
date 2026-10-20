@@ -74,6 +74,8 @@
   export let initialLabels = [];
   /** Content for a new note, e.g. from the share sheet: { title, body_md, images: File[] }. */
   export let prefill = null;
+  /** Open the saved Ask Trace result after a notification tap. */
+  export let autoTrace = false;
 
   const dispatch = createEventDispatcher();
   const TEXT_SAVE_MS = 700;
@@ -1130,6 +1132,10 @@
   }
 
   onMount(async () => {
+    if (autoTrace && traceSessions.hasWork(traceNoteKey(noteId))) {
+      traceAnchor = { left: window.innerWidth / 2, top: 64, bottom: 64 };
+      traceOpen = true;
+    }
     if (autoRecord && canRecord && !noteId) startQuickVoice();
     if (autoDraw && !noteId && !contentLocked) { drawFirst = true; newDrawing(); }
     loadLinks();

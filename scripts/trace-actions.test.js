@@ -16,7 +16,7 @@ test('Ask Trace can close while its per-note session retains the request', () =>
   assert.doesNotMatch(editor, /dismissible=\{!traceBusy\}/);
   assert.match(editor, /<TraceActions[^\n]*\{noteId\}/);
   assert.match(actions, /traceSessions\.forNote\(traceNoteKey\(noteId\)/);
-  assert.match(actions, /await session\.run\(kind, \{ title, body, instruction, request: askTrace \}\)/);
+  assert.match(actions, /await session\.run\(kind, \{ noteId, title, body, instruction, request: askTrace \}\)/);
   assert.match(read('../src/lib/user-state.js'), /traceSessions\.clear\(\)/);
   assert.match(editor, /!traceSessions\.hasWork\(traceNoteKey\(noteId\)\)/, 'a pending request keeps an otherwise empty note available');
 });

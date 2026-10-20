@@ -5,11 +5,12 @@
    * Shows Trace's result first; nothing changes until the user applies it,
    * and applying keeps the previous text in version history.
    */
-  import { createEventDispatcher, tick } from 'svelte';
+  import { createEventDispatcher, tick, onMount } from 'svelte';
   import { _ } from 'svelte-i18n';
   import { askTrace, checklistLines } from '../../lib/trace-run.js';
   import { markdownToPreview } from '../../lib/note-preview.js';
   import { traceSessions, traceNoteKey } from '../../lib/trace-sessions.js';
+  import { requestTracePermission } from '../../lib/trace-notifications.js';
 
   export let title = '';
   export let body = '';
@@ -25,13 +26,15 @@
   let asking = false;
   let instructionEl;
   const session = traceSessions.forNote(traceNoteKey(noteId) ?? Symbol('unsaved-note'));
+  onMount(() => session.view());
   $: ({ action, busy, result, instruction, asking } = $session);
   $: error = $session.failure === 'empty' ? $_('trace_actions.empty')
     : $session.failure ? ($session.error || $_('trace_actions.failed')) : '';
 
   async function run(kind) {
     if (kind === 'custom' && !instruction.trim()) return;
-    await session.run(kind, { title, body, instruction, request: askTrace });
+    requestTracePermission();
+    await session.run(kind, { noteId, title, body, instruction, request: askTrace });
   }
 
   $: items = action === 'checklist' ? checklistLines(result) : [];

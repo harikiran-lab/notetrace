@@ -10,20 +10,22 @@ export function traceNoteKey(noteId) {
 }
 
 /** Requests belong to notes, not to the popup that happens to display them. */
-export function createTraceSessions() {
+export function createTraceSessions({ onComplete = () => {} } = {}) {
   const sessions = new Map();
   function forNote(key) {
     if (sessions.has(key)) return sessions.get(key);
     let state = empty();
     let generation = 0;
+    let viewers = 0;
     const store = writable(state);
     function patch(changes) { state = { ...state, ...changes }; store.set(state); }
     const session = {
       subscribe: store.subscribe,
       patch,
       peek: () => state,
+      view() { viewers++; return () => { viewers--; }; },
       reset() { generation++; state = empty(); store.set(state); },
-      async run(kind, { title, body, instruction = state.instruction, request }) {
+      async run(kind, { noteId, title = '', body, instruction = state.instruction, request }) {
         if (state.busy || (kind === 'custom' && !instruction.trim())) return;
         const action = TRACE_ACTIONS[kind];
         if (!action) return;
@@ -37,6 +39,11 @@ export function createTraceSessions() {
           if (current !== generation) return;
           patch({ error: error?.message || '', failure: 'failed', busy: false });
         }
+        if (current !== generation) return;
+        try {
+          await onComplete({ key, noteId, title, failure: state.failure,
+            isViewing: () => viewers > 0, isCurrent: () => current === generation });
+        } catch { /* delivery cannot change a generated result */ }
       },
     };
     sessions.set(key, session);
@@ -52,4 +59,10 @@ export function createTraceSessions() {
   };
 }
 
-export const traceSessions = createTraceSessions();
+export const traceSessions = createTraceSessions({
+  onComplete: async event => {
+    if (event.noteId == null || !event.isCurrent()) return;
+    const { notifyTraceCompletion } = await import('./trace-notifications.js');
+    if (event.isCurrent()) await notifyTraceCompletion(event);
+  },
+});

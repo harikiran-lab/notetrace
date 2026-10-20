@@ -334,6 +334,7 @@
     // can skip it (see lib/updates.js).
     import('./lib/updates.js').then(({ migrateAutoCheck }) => migrateAutoCheck()).catch(() => {});
     initFold();
+    import('./lib/trace-notifications.js').then(m => m.startTraceNotifications()).catch(() => {});
     import('./lib/pending-voice.js').then(m => m.startPendingVoice()).catch(() => {});
     // Start Page: only when the app opens on the default route, never over a
     // deep link, a share, or a notification tap.
