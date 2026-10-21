@@ -16,15 +16,24 @@ test('each chat reply, including an error, emits one completion with no response
 });
 
 test('account changes and clear invalidate pending chat replies and notification taps', async () => {
-  let account = 'alice', calls = 0;
-  const requests = createTraceChatRequests({ scope: () => account, onComplete: () => calls++ });
+  let account = 'alice', calls = 0, key;
+  const requests = createTraceChatRequests({ scope: () => account, onComplete: event => { calls++; key = event.key; } });
   const a = requests.begin(); account = 'bob';
   assert.equal(a.isCurrent(), false); await a.complete();
   const b = requests.begin(); await b.complete();
   const c = requests.begin(); requests.clear();
   assert.equal(c.isCurrent(), false); await c.complete();
   assert.equal(calls, 1);
-  assert.equal(requests.isCurrent('bob:chat:2'), false);
+  assert.equal(requests.isCurrent(key), false);
+});
+
+test('reloading chat does not reuse notification history identities', async () => {
+  const keys = [];
+  for (let i = 0; i < 2; i++) {
+    const requests = createTraceChatRequests({ scope: () => 'alice', onComplete: e => keys.push(e.key) });
+    await requests.begin().complete();
+  }
+  assert.notEqual(keys[0], keys[1]);
 });
 
 test('notification failures never reject a completed chat request', async () => {

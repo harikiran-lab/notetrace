@@ -6,13 +6,14 @@ export const traceChatOpen = writable(false);
 // Keep request identity separate from the panel so closing it never cancels a
 // reply. Account changes, clearing chat, and unmounting invalidate late replies.
 export function createTraceChatRequests({ scope, onComplete = () => {} }) {
+  const instance = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   let generation = 0;
   let serial = 0;
   const keys = new Set();
   return {
     begin(title = 'Trace') {
       const account = scope(), epoch = generation;
-      const key = `${account}:chat:${++serial}`;
+      const key = `${account}:chat:${instance}:${++serial}`;
       keys.add(key);
       let completed = false;
       const isCurrent = () => epoch === generation && account === scope();
