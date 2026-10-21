@@ -1025,6 +1025,10 @@ test('a sync with nothing new reads little and writes nothing but the pull curso
     p.reminders.rescheduleReminders();
     for (let i = 0; i < 250 && (globalThis.__reminders || []).length === scheduled; i++) await p.sleep(20);
     if ((globalThis.__reminders || []).length === scheduled) throw new Error('startup reminder scheduling did not finish');
+    // The scheduler's first cached-API read also starts its sync loop. Join
+    // that startup sync before counting the following quiet timer pass.
+    await p.sync();
+    p.syncMod.stopSyncLoop();
     globalThis.__sqlCalls = [];
     const before = p.mod.net.sent.length;
     await p.sync();
