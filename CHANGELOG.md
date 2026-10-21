@@ -1,5 +1,12 @@
 # Changelog
 
+## Dev: note controls, reminders, and fonts
+
+- Keep formatting and content-action icons visible on Read Only notes; enable content changes only after Edit.
+- Open reminder calendars and time pickers above their parent popover, preserving the form and note on date selection or child dismissal.
+- Add six font themes with previews in Appearance, local font files and licenses, and a device-specific preference.
+- Add a maximize/restore button beside Pin in desktop note windows.
+
 ## Dev follow-up
 
 - Use the same rounded header corners across Notes, Tasks, Shopping, Settings, and Profile.

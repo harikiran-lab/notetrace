@@ -12,6 +12,10 @@ NoteTrace's source code is licensed under [AGPL-3.0](LICENSE). This file lists a
 | ----- | ------- | ----- |
 | **Inter** (UI typeface) | [SIL Open Font License 1.1][ofl] | `public/fonts/inter-*.woff2` |
 | **Newsreader** (note title typeface) | [SIL Open Font License 1.1][ofl] | `public/fonts/newsreader-*.woff2` |
+| **Manrope** | [SIL Open Font License 1.1][ofl] | `public/fonts/manrope-*.woff2`, `public/fonts/manrope-OFL.txt` |
+| **Nunito Sans** | [SIL Open Font License 1.1][ofl] | `public/fonts/nunito-sans-*.woff2`, `public/fonts/nunito-sans-OFL.txt` |
+| **Lora** | [SIL Open Font License 1.1][ofl] | `public/fonts/lora-*.woff2`, `public/fonts/lora-OFL.txt` |
+| **Roboto Mono** | [SIL Open Font License 1.1][ofl] | `public/fonts/roboto-mono-*.woff2`, `public/fonts/roboto-mono-OFL.txt` |
 | **Material Symbols Rounded** | [Apache License 2.0][apache] | `public/fonts/material-symbols-rounded.woff2` |
 
 Fonts are served by your own instance, never from a CDN. One file per script
