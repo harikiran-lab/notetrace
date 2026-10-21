@@ -3,6 +3,9 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
 import fs from 'node:fs';
 import path from 'node:path';
+import { versionedFonts } from './scripts/versioned-fonts.js';
+import { appNavigationMatch, cacheNavigationResponse } from './src/lib/pwa-routing.js';
+import { textSizeCss } from './scripts/text-size-css.js';
 
 // PDF.js reads these at run time: the 14 standard fonts (a PDF that names
 // Helvetica without embedding it), character maps for Asian scripts, and the
@@ -32,6 +35,7 @@ export default defineConfig({
   // lets the same image run at `/`, `/notetrace/`, or any other prefix
   // without a rebuild.
   base: './',
+  css: { postcss: { plugins: [textSizeCss()] } },
   server: {
     proxy: {
       '/api':     'http://localhost:3004',
@@ -63,6 +67,7 @@ export default defineConfig({
   plugins: [
     svelte(),
     pdfjsAssets(),
+    versionedFonts(),
     VitePWA({
       // 'prompt' downloads new bundles but WAITS for the app to
       // call updateSW(true) before activating. That's what lets us
@@ -70,6 +75,9 @@ export default defineConfig({
       // under the user with no warning. See src/lib/pwa-update.js
       // for the Svelte-side bridge.
       registerType: 'prompt',
+      // A manifest fetch otherwise omits even same-origin cookies and gets
+      // redirected to the login page by authenticated reverse proxies.
+      useCredentials: true,
       workbox: {
         // The app itself is cached, so the installed web app opens without a
         // connection and shows the notes, images, and voice notes it has seen.
@@ -77,23 +85,25 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         // Reminder notification clicks and shared photos (public/sw-extras.js).
         importScripts: ['sw-extras.js'],
-        navigateFallback: 'index.html',
-        // Public note links (/n/<token>) come from the server every time: it
-        // writes the preview tags and the <base> the page needs. Same shape
-        // as the server's /n/:token, so a mistyped or cut-off link reaches the
-        // server too, and Workbox tests the path with its query, which chat
-        // apps add (?fbclid=...) (TraceApps/notetrace#22).
-        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//, /^\/share-target/, /\/n\/[^/?]+\/?(?:\?.*)?$/],
+        // Navigation is handled below: an unconditional precached app shell
+        // intercepts refresh before NetworkFirst can reach the current deploy.
+        navigateFallback: null,
+        // PrecacheRoute also maps '/' to index.html before runtime routes.
+        // Keep the shell precached for fallback, but never alias navigations
+        // to it ahead of the network-first route.
+        directoryIndex: null,
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
+        skipWaiting: false,
         clientsClaim: true,
         runtimeCaching: [
           {
-            urlPattern: ({ request }) => request.mode === 'navigate',
+            urlPattern: appNavigationMatch,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'pages-cache',
               networkTimeoutSeconds: 3,
+              precacheFallback: { fallbackURL: 'index.html' },
+              plugins: [{ cacheWillUpdate: cacheNavigationResponse }],
             }
           },
           {

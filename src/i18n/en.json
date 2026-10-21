@@ -15,6 +15,15 @@
     "digital": "Digital"
 },
   "font_collection": {
+    "size": "Text size",
+    "reset_size": "Reset size",
+    "pairings": "Font pairings",
+    "display": "Display",
+    "body": "Body",
+    "mono_label": "Mono",
+    "loading": "Loading preview fonts…",
+    "failed": "The preview font could not load.",
+    "retry": "Try again",
     "family": "Font family",
     "defaults": "Original & system",
     "sans": "Sans serif",
@@ -29,7 +38,7 @@
     "restore_size": "Restore note size"
 },
   "font_themes": {
-    "title": "Fonts",
+    "title": "Typography",
     "description": "Choose a font theme for this device. Applies to menus, note text, and note titles. All fonts work offline.",
     "sample": "Notes, ideas & reminders",
     "default": "Inter for the app, Newsreader for note titles.",

@@ -1,5 +1,13 @@
 # Changelog
 
+## Dev: font previews and authenticated PWA refresh
+
+- Version the local font stylesheet so updated typography controls cannot reuse cached definitions from an older release. Report loading failures in the preview and allow retry.
+- Add all 34 requested display/body/monospace pairings, with local OFL or Apache 2.0 fonts and bundled licenses. Preserve existing font preferences.
+- Add a 12–22px text-size slider with an immediate preview, saved device preference, and reset control.
+- Include session credentials when fetching the PWA manifest through an authenticated proxy.
+- Refresh app documents from the network first, retain an offline app-shell fallback, and exclude public links, API endpoints, uploads, and auth redirects from the page cache. Honor the update prompt before worker activation.
+
 ## Dev: expanded controls, font collection, and notification sounds
 
 - Show all eligible footer actions directly in maximized desktop note windows.
