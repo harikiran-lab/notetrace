@@ -1,4 +1,19 @@
 {
+  "note_window": {
+    "maximize": "Suurenda märget",
+    "restore_size": "Taasta märkme suurus"
+},
+  "font_themes": {
+    "title": "Fondid",
+    "description": "Vali selle seadme fonditeema. Mõjutab menüüsid, märkmete teksti ja pealkirju. Kõik fondid töötavad võrguühenduseta.",
+    "sample": "Märkmed, ideed ja meeldetuletused",
+    "default": "Rakenduses Inter, märkmete pealkirjades Newsreader.",
+    "manrope": "Puhtad jooned ja moodne geomeetriline stiil.",
+    "nunito": "Pehmed, ümarad tähed mugavaks lugemiseks.",
+    "lora": "Klassikaline raamatulik seriifidega kiri.",
+    "mono": "Ühelaiused tähed tehnilise ilmega.",
+    "system": "Kasuta oma seadme vaikefonti."
+},
   "notification_history": {
     "title": "Teavituste ajalugu",
     "empty": "Teavitusi veel pole.",

@@ -32,6 +32,10 @@
   import LockScreen from './components/LockScreen.svelte';
   import OfflineStatus from './components/OfflineStatus.svelte';
   import { describeConnectionIssue } from './lib/connection-message.js';
+  import { fontTheme } from './stores/settings.js';
+  import { applyFontTheme } from './lib/font-themes.js';
+
+  $: applyFontTheme($fontTheme);
 
   // Sync state — mirrored from the real sync store (dynamically imported).
   // Includes the smart-banner fields (connectionIssue, showErrorBanner) so
