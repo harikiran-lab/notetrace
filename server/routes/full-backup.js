@@ -210,6 +210,8 @@ function dumpDatabase() {
     // restore doesn't quietly break whatever calls this server.
     api_tokens:            _selectIfExists('api_tokens'),
     webhooks:              _selectIfExists('webhooks'),
+    capture_requests:      _selectIfExists('capture_requests'),
+    capture_entries:       _selectIfExists('capture_entries'),
   };
 }
 
@@ -230,6 +232,8 @@ function restoreFromZip(zip) {
     // tree restores.
     db.pragma('defer_foreign_keys = ON');
     // Wipe in dependency order, children before parents.
+    db.prepare('DELETE FROM capture_requests').run();
+    db.prepare('DELETE FROM capture_entries').run();
     db.prepare('DELETE FROM note_labels').run();
     db.prepare('DELETE FROM note_members').run();
     db.prepare('DELETE FROM note_attachments').run();
@@ -287,6 +291,7 @@ function restoreFromZip(zip) {
     _bulkRestoreSchemaDriven('note_versions',   data.note_versions);
     _bulkRestoreSchemaDriven('note_members',    data.note_members);
     _bulkRestoreSchemaDriven('note_attachments', data.note_attachments);
+    _bulkRestoreSchemaDriven('capture_entries', data.capture_entries);
 
     // Side tables. Schema-driven INSERTs (column list pulled from PRAGMA)
     // so a backup made on a slightly different schema version still
@@ -306,6 +311,7 @@ function restoreFromZip(zip) {
     _restoreTable('invite_tokens',         data.invite_tokens);
     _restoreTable('api_tokens',            data.api_tokens);
     _restoreTable('webhooks',              data.webhooks);
+    _restoreTable('capture_requests',      data.capture_requests);
 
     // OIDC — restore only when target tables exist.
     try {
