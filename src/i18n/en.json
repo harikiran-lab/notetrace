@@ -1,4 +1,14 @@
 {
+  "notification_history": {
+    "title": "Notification history",
+    "empty": "No notifications yet.",
+    "unread": "{count} unread notifications",
+    "mark_read": "Mark all read",
+    "clear": "Clear history",
+    "blocked": "Notifications are blocked. Allow them in your browser or device notification settings, then return here.",
+    "https": "Open NoteTrace over HTTPS (or localhost) to enable browser notifications.",
+    "device_only": "Recent notifications on this device. History clears on sign-out. Ask Trace results remain available only while the app stays open."
+},
   "nav": {
     "notes":    "Notes",
     "reminders": "Reminders",

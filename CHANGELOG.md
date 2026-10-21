@@ -1,5 +1,10 @@
 # Changelog
 
+## Dev follow-up
+
+- Use the same rounded header corners across Notes, Tasks, Shopping, Settings, and Profile.
+- Add a notification history bell with local account-scoped persistence, unread indicators, review links, and the shared Settings notification permission control. Keep browser reminders in history even without OS notification permission.
+
 All notable changes to NoteTrace are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 

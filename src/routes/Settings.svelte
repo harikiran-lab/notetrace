@@ -9,6 +9,7 @@
 </script>
 
 <script>
+  import NotificationHistory from '../components/layout/NotificationHistory.svelte';
   // Thin router shell (mirrors NutriTrace / LiftTrace). Section bodies
   // live in components/settings/*.svelte and are dispatched to via
   // <svelte:component> when the URL is /settings/<slug>. The /settings
@@ -587,6 +588,7 @@
       {:else}
         <h1>{$_('routes.settings.title')}</h1>
       {/if}
+      <NotificationHistory />
     </header>
 
     <!-- Search bar renders on every settings view (index AND sub-pages).

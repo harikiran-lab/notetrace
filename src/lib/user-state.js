@@ -20,5 +20,6 @@ export async function resetUserState() {
     import('./cooktrace.js').then(m => m.resetCooktraceState?.()),
     import('./trace-sessions.js').then(m => m.traceSessions.clear()),
     import('./trace-notifications.js').then(m => m.clearTraceNotifications()),
+    import('./notification-history.js').then(m => m.notificationHistory.reset()),
   ]);
 }

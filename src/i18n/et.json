@@ -1,4 +1,14 @@
 {
+  "notification_history": {
+    "title": "Teavituste ajalugu",
+    "empty": "Teavitusi veel pole.",
+    "unread": "{count} lugemata teavitust",
+    "mark_read": "Märgi kõik loetuks",
+    "clear": "Tühjenda ajalugu",
+    "blocked": "Teavitused on blokeeritud. Luba need brauseri või seadme teavituste seadetes ja naase siia.",
+    "https": "Brauseri teavituste lubamiseks ava NoteTrace HTTPS-i kaudu (või localhost-is).",
+    "device_only": "Selle seadme hiljutised teavitused. Ajalugu kustutatakse väljalogimisel. Ask Trace’i tulemused on saadaval ainult siis, kui rakendus on avatud."
+},
   "nav": {
     "notes": "Märkmed",
     "reminders": "Meeldetuletused",

@@ -8,6 +8,7 @@ import { notifLocalEnabled, notifTraceResults } from '../stores/settings.js';
 import { showToast, dismissToast } from '../stores/toast.js';
 import { traceNoteKey } from './trace-sessions.js';
 import { createTraceNotifier, shouldNotifyTrace } from './trace-notification-core.js';
+import { notificationHistory } from './notification-history.js';
 
 const enabled = () => get(notifLocalEnabled) !== false && get(notifTraceResults) !== false;
 const owner = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
@@ -22,10 +23,12 @@ const notifier = createTraceNotifier({
   open: noteId => push(`/?note=${encodeURIComponent(noteId)}&trace=1`),
   copy: event => {
     const t = get(_);
-    return { channel: t('trace_notifications.channel'),
+    const text = { channel: t('trace_notifications.channel'),
       title: t(event.failure ? 'trace_notifications.failed' : 'trace_notifications.ready'),
       body: t('trace_notifications.review', { values: { title: event.title.trim() || t('notes.untitled') } }),
       review: t('trace_notifications.action') };
+    notificationHistory.add({ id: `trace:${event.key}`, kind: 'trace-result', noteId: event.noteId, title: text.title, body: text.body });
+    return text;
   },
   fallback: (text, review) => {
     const id = showToast(`${text.title} — ${text.body}`, 12000, 'info', {
