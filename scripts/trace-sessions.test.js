@@ -102,3 +102,36 @@ test('note session keys distinguish accounts and servers', () => {
     else globalThis.localStorage = before;
   }
 });
+
+test('completion is emitted once after leaving the popup, including errors, without changing the result', async () => {
+  const completed = [];
+  const sessions = createTraceSessions({ onComplete: event => { completed.push(event); throw new Error('No OS permission'); } });
+  const session = sessions.forNote('a');
+  const leave = session.view();
+  const response = deferred();
+  const running = session.run('tidy', { noteId: 7, title: 'Trip', body: 'socks', request: () => response.promise });
+  leave(); response.resolve('Pack socks.'); await running;
+  assert.equal(completed.length, 1);
+  assert.equal(completed[0].noteId, 7);
+  assert.equal(completed[0].isViewing(), false);
+  assert.equal(completed[0].failure, '');
+  assert.equal(get(session).result, 'Pack socks.');
+  assert.equal(get(session).failure, '');
+  await session.run('tidy', { noteId: 7, body: 'socks', request: async () => { throw new Error('Provider offline'); } });
+  assert.equal(completed[1].failure, 'failed');
+  assert.equal(completed[0].isCurrent(), false);
+});
+
+test('a result still being viewed is identified, and a cleared generation never emits completion', async () => {
+  const completed = [];
+  const sessions = createTraceSessions({ onComplete: event => completed.push(event) });
+  const session = sessions.forNote('a');
+  const leave = session.view();
+  await session.run('tidy', { body: 'socks', request: async () => 'Pack socks.' });
+  assert.equal(completed[0].isViewing(), true);
+  leave();
+  const response = deferred();
+  const running = session.run('tidy', { body: 'socks', request: () => response.promise });
+  sessions.clear(); response.resolve('Old reply'); await running;
+  assert.equal(completed.length, 1);
+});

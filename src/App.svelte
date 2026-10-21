@@ -334,6 +334,7 @@
     // can skip it (see lib/updates.js).
     import('./lib/updates.js').then(({ migrateAutoCheck }) => migrateAutoCheck()).catch(() => {});
     initFold();
+    import('./lib/trace-notifications.js').then(m => m.startTraceNotifications()).catch(() => {});
     import('./lib/pending-voice.js').then(m => m.startPendingVoice()).catch(() => {});
     // Start Page: only when the app opens on the default route, never over a
     // deep link, a share, or a notification tap.
@@ -715,7 +716,7 @@
   // editor or dialog is open, where the shortcut would pull focus away.
   async function _searchShortcut(e) {
     if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return;
-    if (document.querySelector('.editor-backdrop, [role="dialog"][aria-modal="true"]')) return;
+    if (document.querySelector('.editor-backdrop, dialog[open], [role="dialog"][aria-modal="true"]')) return;
     e.preventDefault();
     const onNotes = $location === '/' || /^\/(notes|shared|archive|trash|reminders|label\/)/.test($location);
     if (!onNotes) { await push('/'); await new Promise(r => setTimeout(r, 60)); }

@@ -1,4 +1,5 @@
 <script>
+  import NotificationPermission from '../ui/NotificationPermission.svelte';
   import Toggle from './Toggle.svelte';
   import ConnectionStatus from './ConnectionStatus.svelte';
   // SettingsNotifications — device + push-service reminders.
@@ -14,10 +15,10 @@
   //   - Note reminders (a note's reminder time comes due)
   import { onMount } from 'svelte';
   import { _ } from 'svelte-i18n';
-  import { showSuccess, showError } from '../../stores/toast.js';
+  import { showSuccess } from '../../stores/toast.js';
   import { isNative, getServerUrl, getAuthToken, apiUrl } from '../../lib/platform.js';
   import {
-    notifLocalEnabled, notifPushService,
+    notifLocalEnabled, notifTraceResults, notifPushService,
     appriseUrl, appriseTag,
     gotifyUrl, gotifyToken,
     ntfyUrl, ntfyTopic, ntfyToken,
@@ -36,7 +37,6 @@
   let notifNoteReminders   = getBool('notifNoteReminders', true);
   let notifTasksDue        = getBool('notifTasksDue', true);
   let tasksDigestTime      = String(DB.getSetting('tasksDigestTime', '09:00') || '09:00');
-  let browserPermission = typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
 
   // Android: reminders fire at the exact minute only with the exact-alarm
   // permission (granted automatically on most phones).
@@ -108,22 +108,6 @@
     }
   }
 
-  // Device notifications: ask permission on Web (Capacitor handles
-  // separately on the native side via the Settings UI).
-  async function requestDevicePermission() {
-    if (typeof Notification === 'undefined') {
-      showError($_('settings_notifications.toast.not_supported'));
-      return;
-    }
-    try {
-      const result = await Notification.requestPermission();
-      browserPermission = result;
-      if (result === 'granted') showSuccess($_('settings_notifications.toast.permission_granted'));
-      else if (result === 'denied') showError($_('settings_notifications.toast.permission_denied'));
-    } catch (e) {
-      showError(e.message || 'Permission request failed');
-    }
-  }
 </script>
 
 <div class="section-body">
@@ -154,15 +138,19 @@
           <span class="setting-label">{$_('settings_notifications.browser_permission')}</span>
           <span class="setting-desc">{$_('settings_notifications.browser_permission_desc')}</span>
         </div>
-        {#if browserPermission === 'granted'}
-          <span class="perm-ok"><span class="material-symbols-rounded">check</span>{$_('settings_notifications.permission_allowed')}</span>
-        {:else}
-          <button class="btn btn-secondary" on:click={requestDevicePermission}>
-            {$_('settings_notifications.request_permission')}
-          </button>
-        {/if}
+        <NotificationPermission />
       </div>
     {/if}
+  </div>
+
+  <div class="card settings-card">
+    <div class="setting-row">
+      <div>
+        <span class="setting-label">{$_('settings_notifications.trace_results')}</span>
+        <span class="setting-desc">{$_('settings_notifications.trace_results_desc')}</span>
+      </div>
+      <Toggle label={$_('settings_notifications.trace_results')} checked={$notifTraceResults} on:change={e => notifTraceResults.set(e.detail)} />
+    </div>
   </div>
 
   <p class="settings-group-heading">{$_('settings_notifications.push_service')}</p>
@@ -319,6 +307,4 @@
     appearance: none; -webkit-appearance: none; cursor: pointer;
   }
   .select.sel-sm { height: 36px; }
-  .perm-ok { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--accent); white-space: nowrap; }
-  .perm-ok .material-symbols-rounded { font-size: 18px; }
 </style>
