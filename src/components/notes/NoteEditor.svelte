@@ -1368,7 +1368,7 @@
       </div>
 
       {#if !inline || readOnly}
-      <footer class="editor-bar">
+      <footer class="editor-bar" class:expanded={maximized && !narrow}>
         {#if readOnly}
           <span class="edited">{$_('notes.in_trash')}</span>
           <span class="spacer"></span>
@@ -1376,6 +1376,17 @@
             <span class="material-symbols-rounded">restore_from_trash</span>{$_('notes.restore')}
           </button>
           <button class="btn btn-danger" on:click={deleteForever}>{$_('notes.delete_forever')}</button>
+        {:else if maximized && !narrow}
+          <div class="bar-actions expanded-actions" role="toolbar" aria-label={$_('notes.more_options')}>
+            {#each readerActions.filter(action => action.key !== 'pin') as action (action.key)}
+              <button class="icon-btn" class:on={action.pressed} class:danger={action.danger}
+                disabled={action.disabled} on:click={action.run} title={action.label} aria-label={action.label} aria-pressed={action.pressed}
+                data-record={action.key === 'voice' ? '' : undefined}>
+                <span class="material-symbols-rounded" class:fill={action.pressed}>{action.icon}</span>
+              </button>
+            {/each}
+          </div>
+          <button class="btn btn-primary done" on:click={() => close()}>{$_('notes.done')}</button>
         {:else if compactBar && fmtMode}
           <div class="phone-bar fmt-row" role="toolbar" aria-label={$_('notes.formatting')}>
             <button class="icon-btn" on:mousedown|preventDefault on:click={() => fmtMode = false} aria-label={$_('notes.close_formatting')}>
@@ -1802,6 +1813,9 @@
     -webkit-backdrop-filter: blur(24px) saturate(180%);
   }
   .bar-actions { display: flex; flex-wrap: nowrap; gap: 2px; min-width: 0; }
+  .editor-bar.expanded { flex-shrink: 0; }
+  .bar-actions.expanded-actions { flex: 1; flex-wrap: wrap; }
+  .expanded-actions .icon-btn { flex-shrink: 0; }
   .spacer { flex: 1; }
   .edited { font-size: 12px; color: var(--text-3); white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .compact-bar .edited { display: none; }

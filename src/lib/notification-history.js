@@ -1,8 +1,10 @@
 import { writable } from 'svelte/store';
 import { settingPrefix, settingScope } from './setting-key.js';
+import { isNative } from './platform.js';
+import { notificationPopup } from './notification-popup.js';
 
 // Local to this browser/device and account; never synced to the server.
-export function createNotificationHistory({ storage, scope, now = Date.now, limit = 50 }) {
+export function createNotificationHistory({ storage, scope, now = Date.now, limit = 50, onAdd = () => {}, onClear = () => {} }) {
   const store = writable([]);
   let key;
   let entries = [];
@@ -27,13 +29,15 @@ export function createNotificationHistory({ storage, scope, now = Date.now, limi
       load();
       entries = [{ ...event, time: now(), read: false }, ...entries.filter(e => e.id !== event.id)].slice(0, limit);
       save();
+      onAdd(entries[0]);
     },
     markRead(id) { load(); entries = entries.map(e => !id || e.id === id ? { ...e, read: true } : e); save(); },
-    clear() { load(); entries = []; save(); },
+    clear() { load(); entries = []; save(); onClear(); },
     reset() {
       // Drop the previous account's local history on sign-out/account change.
       try { if (key) storage.removeItem(key); } catch {}
       key = undefined; entries = []; store.set(entries);
+      onClear();
     },
   };
 }
@@ -45,4 +49,8 @@ export const notificationHistory = createNotificationHistory({
     removeItem: key => localStorage.removeItem(key),
   },
   scope: () => `${settingScope()}:${settingPrefix()}notificationHistory`,
+  onAdd: entry => {
+    if (!isNative && typeof window !== 'undefined' && (typeof Notification === 'undefined' || Notification.permission !== 'granted')) notificationPopup.show(entry);
+  },
+  onClear: () => notificationPopup.dismiss(),
 });

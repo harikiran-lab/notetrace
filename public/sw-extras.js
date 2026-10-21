@@ -12,7 +12,7 @@ self.addEventListener('message', event => {
 
 self.addEventListener('notificationclick', (event) => {
   const data = event.notification?.data;
-  if (data?.kind === 'trace-result') {
+  if (['trace-result', 'trace-chat'].includes(data?.kind)) {
     event.notification.close();
     event.waitUntil((async () => {
       const tabs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });

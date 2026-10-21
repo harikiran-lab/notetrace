@@ -1,4 +1,29 @@
 {
+  "notification_sounds": {
+    "title": "Browser notification sounds",
+    "description": "Play a tone for Trace chat replies, Ask Trace alerts, and note/task reminders while NoteTrace is open. Use Preview to enable audio. Browser, muted-tab, and device settings still apply; unavailable custom audio falls back to the system sound when supported.",
+    "enable": "Enable sounds in this browser",
+    "sound": "Sound",
+    "volume": "Volume",
+    "preview": "Preview sound",
+    "playing": "Preview played.",
+    "unavailable": "Sound unavailable. Check the volume and browser audio settings.",
+    "gentle": "Gentle",
+    "chime": "Chime",
+    "bell": "Bell",
+    "pulse": "Pulse",
+    "digital": "Digital"
+},
+  "font_collection": {
+    "family": "Font family",
+    "defaults": "Original & system",
+    "sans": "Sans serif",
+    "serif": "Serif",
+    "mono": "Monospace",
+    "preview": "Preview",
+    "count": "{count} locally bundled choices. Your selection updates the preview and app immediately.",
+    "sample_body": "Capture an idea, plan your week, or return to a favorite note. The right typeface makes every detail easier to read."
+},
   "note_window": {
     "maximize": "Maximize note",
     "restore_size": "Restore note size"
@@ -1756,9 +1781,9 @@
     "tasks_due":                   "Tasks Due",
     "tasks_due_desc":              "Once a day, a notification listing checklist items due today and overdue.",
     "tasks_due_time":              "Time",
-    "device_notifications_sub": "Pop-ups on this device for reminders, tasks, and Ask Trace results.",
-    "trace_results": "Ask Trace Results",
-    "trace_results_desc": "Notify when Ask Trace finishes while you are away from its result. Tap to review it. The app must remain running.",
+    "device_notifications_sub": "Pop-ups on this device for reminders, tasks, Trace chat replies, and Ask Trace results.",
+    "trace_results": "Trace Results",
+    "trace_results_desc": "Notify for Trace chat replies and for Ask Trace results when you are away. Tap to review. Keep the app running. Without browser permission, a brief popup appears below the bell.",
     "push_service_sub": "Send reminder and task alerts through ntfy, Gotify, or Apprise, to any device.",
     "reminders_sub": "What NoteTrace notifies you about.",
     "push_configured": "Configured",
@@ -1766,6 +1791,8 @@
     "hide": "Hide"
   },
   "trace_notifications": {
+    "chat_ready": "Trace replied",
+    "chat_review": "Open Trace chat to review the response.",
     "channel": "Ask Trace results",
     "ready": "Ask Trace is ready",
     "failed": "Ask Trace needs attention",

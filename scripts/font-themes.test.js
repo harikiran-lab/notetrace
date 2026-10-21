@@ -22,7 +22,7 @@ test('unknown or malformed stored preferences cannot inject CSS', () => {
 });
 test('every new font family ships local WOFF2 data and its license', () => {
   const css = readFileSync(new URL('../public/fonts/fonts.css', import.meta.url), 'utf8');
-  for (const [family, slug] of [['Manrope','manrope'], ['Nunito Sans','nunito-sans'], ['Lora','lora'], ['Roboto Mono','roboto-mono']]) {
+  for (const [family, slug] of FONT_THEMES.filter(theme => theme.assetSlug).map(theme => [theme.name, theme.assetSlug])) {
     assert.ok(css.includes(`font-family: '${family}'`));
     const binary = readFileSync(new URL(`../public/fonts/${slug}-latin.woff2`, import.meta.url));
     assert.equal(binary.toString('ascii', 0, 4), 'wOF2');

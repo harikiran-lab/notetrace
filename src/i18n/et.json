@@ -1,4 +1,29 @@
 {
+  "notification_sounds": {
+    "title": "Brauseri teavituste helid",
+    "description": "Esita heli Ask Trace’i teavituste ja meeldetuletuste korral, kui NoteTrace on avatud. Heli lubamiseks kasuta eelvaadet. Kehtivad brauseri ja seadme heliseaded.",
+    "enable": "Luba selles brauseris helid",
+    "sound": "Heli",
+    "volume": "Helitugevus",
+    "preview": "Kuula eelvaadet",
+    "playing": "Eelvaade esitatud.",
+    "unavailable": "Heli pole saadaval. Kontrolli helitugevust ja brauseri seadeid.",
+    "gentle": "Õrn",
+    "chime": "Helin",
+    "bell": "Kell",
+    "pulse": "Pulss",
+    "digital": "Digitaalne"
+},
+  "font_collection": {
+    "family": "Fondiperekond",
+    "defaults": "Algne ja süsteem",
+    "sans": "Seriifideta",
+    "serif": "Seriifidega",
+    "mono": "Ühelaiune",
+    "preview": "Eelvaade",
+    "count": "{count} kohalikku valikut. Valik muudab eelvaadet ja rakendust kohe.",
+    "sample_body": "Salvesta mõte, kavanda nädalat või naase lemmikmärkme juurde. Sobiv kiri teeb iga detaili loetavamaks."
+},
   "note_window": {
     "maximize": "Suurenda märget",
     "restore_size": "Taasta märkme suurus"
