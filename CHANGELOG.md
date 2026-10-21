@@ -1,5 +1,10 @@
 # Changelog
 
+## Dev: MailFlow capture integration
+
+- Add an opt-in capture API for Markdown notes and native tasks, with per-user capture-only tokens and transactional duplicate protection.
+- Preserve source-email context through sync and Markdown export. Stop reminders for completed imported tasks across browser, Android, and server delivery.
+
 ## Dev: font previews and authenticated PWA refresh
 
 - Version the local font stylesheet so updated typography controls cannot reuse cached definitions from an older release. Report loading failures in the preview and allow retry.
