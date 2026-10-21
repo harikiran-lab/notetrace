@@ -1,5 +1,14 @@
 # Changelog
 
+## Dev: expanded controls, font collection, and notification sounds
+
+- Show all eligible footer actions directly in maximized desktop note windows.
+- Match gradient and animated header text to the primary button foreground for theme contrast.
+- Expand Appearance to 28 locally served font choices in a grouped dropdown with a live adjacent preview.
+- Add five optional browser notification sounds, volume, and Preview in Notifications.
+- Deliver Trace chat reply/error notifications with review links to chat, history, sound preferences, and stale-account protection.
+- Show a six-second notification popup below the bell when browser notifications are unavailable, with review and dismiss actions.
+
 ## Dev: note controls, reminders, and fonts
 
 - Keep formatting and content-action icons visible on Read Only notes; enable content changes only after Edit.

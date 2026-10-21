@@ -16,7 +16,9 @@
     fontTheme,
   } from '../../stores/settings.js';
   import { openColorPicker } from '../../stores/color-picker.js';
-  import { FONT_THEMES, fontThemeFor } from '../../lib/font-themes.js';
+  import { FONT_THEMES, FONT_GROUPS, fontThemeFor } from '../../lib/font-themes.js';
+
+  $: selectedFont = fontThemeFor($fontTheme);
 
   // Theme / accent options — mirror NT exactly.
   const APPEARANCE_OPTS = [
@@ -71,16 +73,27 @@
         <span class="setting-desc">{$_('font_themes.description')}</span>
       </div>
     </div>
-    <div class="font-options" role="group" aria-label={$_('font_themes.title')}>
-      {#each FONT_THEMES as theme (theme.id)}
-        <button class="font-option" class:selected={fontThemeFor($fontTheme).id === theme.id}
-          aria-pressed={fontThemeFor($fontTheme).id === theme.id} aria-label={theme.name}
-          on:click={() => fontTheme.set(theme.id)} style="font-family:{theme.body}">
-          <span class="font-name">{theme.name}<span class="material-symbols-rounded" aria-hidden="true">{fontThemeFor($fontTheme).id === theme.id ? 'check_circle' : 'radio_button_unchecked'}</span></span>
-          <span class="font-sample" style="font-family:{theme.title || theme.body}">{$_('font_themes.sample')}</span>
-          <span class="font-detail">{$_(`font_themes.${theme.id}`)}</span>
-        </button>
-      {/each}
+    <div class="font-layout">
+      <div class="font-selection">
+        <label class="setting-label" for="font-theme">{$_('font_collection.family')}</label>
+        <select id="font-theme" class="select" value={selectedFont.id} on:change={e => fontTheme.set(e.currentTarget.value)}>
+          {#each FONT_GROUPS as group}
+            <optgroup label={$_(`font_collection.${group}`)}>
+              {#each FONT_THEMES.filter(theme => theme.group === group) as theme (theme.id)}
+                <option value={theme.id}>{theme.name}</option>
+              {/each}
+            </optgroup>
+          {/each}
+        </select>
+        <p class="setting-desc">{$_('font_collection.count', { values: { count: FONT_THEMES.length } })}</p>
+      </div>
+      <section class="font-preview" aria-label={$_('font_collection.preview')} style="font-family:{selectedFont.body}">
+        <span class="preview-label">{$_('font_collection.preview')} · {selectedFont.name}</span>
+        <h3 style="font-family:{selectedFont.title || selectedFont.body}">{$_('font_themes.sample')}</h3>
+        <p>{$_('font_collection.sample_body')}</p>
+        <span class="preview-characters">Aa Bb Cc · 0123456789</span>
+        <span class="btn btn-primary preview-button" aria-hidden="true">{$_('notes.done')}</span>
+      </section>
     </div>
   </div>
   <div class="card settings-card">
@@ -197,15 +210,16 @@
 </div>
 
 <style>
-  .font-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 16px 16px; }
-  .font-option { padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface-2); color: var(--text-1); text-align: start; min-width: 0; }
-  .font-option:hover { border-color: var(--accent); }
-  .font-option.selected { border-color: var(--accent); background: var(--accent-dim); }
-  .font-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 600; }
-  .font-name .material-symbols-rounded { font-size: 18px; color: var(--accent); flex-shrink: 0; }
-  .font-sample { display: block; margin: 12px 0 8px; font-size: 22px; line-height: 1.3; overflow-wrap: anywhere; }
-  .font-detail { display: block; font-size: 12px; color: var(--text-2); line-height: 1.5; }
-  @media (max-width: 420px) { .font-options { grid-template-columns: 1fr; } }
+  .font-layout { display: grid; grid-template-columns: minmax(180px, 240px) minmax(0, 1fr); gap: 20px; padding: 0 16px 20px; }
+  .font-selection { min-width: 0; }
+  .font-selection .select { width: 100%; margin: 8px 0; }
+  .font-preview { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-2); }
+  .preview-label { display: block; font-size: 12px; color: var(--text-3); }
+  .font-preview h3 { font-size: 26px; line-height: 1.3; margin: 12px 0; overflow-wrap: anywhere; }
+  .font-preview p { font-size: 15px; line-height: 1.6; color: var(--text-2); }
+  .preview-characters { display: block; margin-top: 12px; font-size: 14px; color: var(--text-3); }
+  .preview-button { margin-top: 18px; pointer-events: none; }
+  @media (max-width: 700px) { .font-layout { grid-template-columns: 1fr; } }
   /* Accent-swatch styles live with the section that owns them so the
      rules travel with the extract. Mirrors NT. */
   .accent-swatches { display: flex; gap: 10px; flex-wrap: wrap; padding: 0 16px 14px; }

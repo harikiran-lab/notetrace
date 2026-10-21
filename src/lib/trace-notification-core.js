@@ -11,8 +11,8 @@ export function createTraceNotifier({ native, plugin, web, enabled, copy, open, 
   let nextId = 1_500_000_000;
   const ids = new Map();
   const pageNotifications = new Set();
-  const current = data => data?.kind === 'trace-result' && isCurrent(data);
-  function activate(data) { if (current(data)) open(data.noteId); }
+  const current = data => ['trace-result', 'trace-chat'].includes(data?.kind) && isCurrent(data);
+  function activate(data) { if (current(data)) open(data.noteId, data); }
   async function start() {
     if (!native) return;
     listener ??= plugin.addListener('localNotificationActionPerformed', event => activate(event.notification?.extra))
@@ -20,7 +20,7 @@ export function createTraceNotifier({ native, plugin, web, enabled, copy, open, 
     await listener;
   }
   async function show(event) {
-    const data = { kind: 'trace-result', noteId: event.noteId, key: event.key, owner };
+    const data = { kind: event.kind || 'trace-result', noteId: event.noteId, key: event.key, owner };
     const generation = epoch;
     const valid = () => generation === epoch && enabled() && current(data) && event.isCurrent();
     if (!valid()) return false;
@@ -44,6 +44,7 @@ export function createTraceNotifier({ native, plugin, web, enabled, copy, open, 
         const registration = await web.registration();
         if (!valid()) return false;
         const options = { body: text.body, tag: `notetrace-trace:${owner}:${event.key}`, data, icon: 'icons/icon-192.png' };
+        if (typeof text.silent === 'boolean') options.silent = text.silent;
         if (registration?.showNotification) {
           try {
             data.clientId = await web.clientId?.(registration);

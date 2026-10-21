@@ -20,6 +20,7 @@ import { notesChanged } from '../stores/notes.js';
 import { DB } from './db.js';
 import { buildTaskDigest, localParts, timeToMinutes } from '../../server/lib/task-digest-core.js';
 import { notificationHistory } from './notification-history.js';
+import { notificationSoundSilent } from './notification-sounds.js';
 
 const TICK_MS = 20 * 1000;
 const REFRESH_MS = 5 * 60 * 1000;
@@ -67,8 +68,9 @@ async function _load() {
 async function _show(note) {
   const { title, body } = reminderNotificationText(note, _label);
   notificationHistory.add({ id: `reminder:${note.id}:${Date.now()}`, kind: 'reminder', noteId: note.id, title, body });
+  const silent = notificationSoundSilent();
   if (!webNotificationsSupported() || Notification.permission !== 'granted') return;
-  const options = { body, tag: `note-reminder-${note.id}`, data: { noteId: note.id }, icon: 'icons/icon-192.png' };
+  const options = { body, tag: `note-reminder-${note.id}`, data: { noteId: note.id }, icon: 'icons/icon-192.png', silent };
   try {
     const reg = await navigator.serviceWorker?.getRegistration?.();
     if (reg?.showNotification) { await reg.showNotification(title, options); return; }
@@ -99,6 +101,7 @@ async function _tasksDigestTick(now) {
   if (!_claim(`tasks@${date}`, now.getTime()) || !digest) return;
   const options = { body: digest.body, tag: `tasks-due-${date}`, data: { noteId: 'tasks' }, icon: 'icons/icon-192.png' };
   notificationHistory.add({ id: `tasks:${date}`, kind: 'reminder', noteId: 'tasks', title: digest.title, body: digest.body });
+  options.silent = notificationSoundSilent();
   if (!webNotificationsSupported() || Notification.permission !== 'granted') return;
   try {
     const reg = await navigator.serviceWorker?.getRegistration?.();

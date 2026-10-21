@@ -11,7 +11,7 @@ test('watching the result stays quiet, but leaving the note, tab, or app notifie
   assert.equal(shouldNotifyTrace({ viewing: true, visibility: 'hidden', focused: false }), true);
   assert.equal(shouldNotifyTrace({ viewing: true, visibility: 'visible', focused: false }), true);
 });
-function fixture({ native = false, permission = 'granted', serviceWorker = true } = {}) {
+function fixture({ native = false, permission = 'granted', serviceWorker = true, silent } = {}) {
   const posted = [], opened = [], fallbacks = [], removed = [], pages = [];
   let action;
   let enabled = true, account = 'account';
@@ -38,9 +38,9 @@ function fixture({ native = false, permission = 'granted', serviceWorker = true 
   };
   const notifier = createTraceNotifier({
     native, plugin, web, owner: 'this-app', enabled: () => enabled,
-    isCurrent: data => data.owner === 'this-app' && data.key === `${account}:${data.noteId}`,
-    copy: value => ({ title: value.failure ? 'Needs attention' : 'Ready', body: 'Tap to review Trip', channel: 'Ask Trace' }),
-    open: id => opened.push(id), fallback: (text, review) => fallbacks.push({ text, review }),
+    isCurrent: data => data.owner === 'this-app' && data.key === `${account}:${data.kind === 'trace-chat' ? 'chat' : data.noteId}`,
+    copy: value => ({ title: value.failure ? 'Needs attention' : 'Ready', body: 'Tap to review Trip', channel: 'Ask Trace', silent }),
+    open: (id, data) => opened.push(data.kind === 'trace-chat' ? 'chat' : id), fallback: (text, review) => fallbacks.push({ text, review }),
   });
   return { notifier, posted, opened, fallbacks, removed, pages, registration, plugin, web,
     tap: data => action({ notification: { extra: data } }),
@@ -55,6 +55,20 @@ test('web delivery carries the originating tab and note, without generated conte
   f.notifier.activate(f.posted[0].data);
   assert.deepEqual(f.opened, [7]);
   assert.equal(f.fallbacks.length, 0);
+});
+
+test('chat replies deliver through web, Android, and fallback and open chat without a note id', async () => {
+  for (const options of [{}, { native: true }, { permission: 'denied' }]) {
+    const f = fixture(options);
+    const chat = { kind: 'trace-chat', key: 'account:chat', title: 'Trace', isCurrent: () => true };
+    await f.notifier.show(chat);
+    if (f.fallbacks.length) f.fallbacks[0].review();
+    else if (options.native) f.tap(f.posted[0].extra);
+    else f.notifier.activate(f.posted[0].data);
+    assert.deepEqual(f.opened, ['chat']);
+    f.switchAccount(); await f.notifier.show(chat);
+    assert.equal(f.posted.length + f.fallbacks.length, 1);
+  }
 });
 
 test('Android posts separate notifications per note, reuses an id on retry, and routes taps', async () => {
@@ -156,10 +170,22 @@ test('service-worker clicks focus the originating tab instead of an arbitrary No
   handlers.message({ data: { type: 'trace-client-id' }, source: { id: 'originating-tab' }, ports: [{ postMessage: id => { clientId = id; } }] });
   assert.equal(clientId, 'originating-tab');
   let work;
-  handlers.notificationclick({ notification: { data: { kind: 'trace-result', noteId: 7, clientId }, close() {} }, waitUntil: promise => { work = promise; } });
-  await work;
-  assert.deepEqual(focused, ['originating-tab']);
-  assert.equal(messages.length, 1);
-  assert.equal(messages[0].id, 'originating-tab');
-  assert.equal(messages[0].message.type, 'trace-result');
+  for (const kind of ['trace-result', 'trace-chat']) {
+    handlers.notificationclick({ notification: { data: { kind, noteId: kind === 'trace-result' ? 7 : undefined, clientId }, close() {} }, waitUntil: promise => { work = promise; } });
+    await work;
+    assert.equal(focused.at(-1), 'originating-tab');
+    assert.equal(messages.at(-1).id, 'originating-tab');
+    assert.equal(messages.at(-1).message.type, 'trace-result');
+    assert.equal(messages.at(-1).message.kind, kind);
+  }
+});
+
+
+test('web delivery forwards sound policy for system and page notifications', async () => {
+  for (const silent of [true, false]) for (const serviceWorker of [true, false]) {
+    const f = fixture({ silent, serviceWorker });
+    await f.notifier.show(event());
+    const notification = serviceWorker ? f.posted[0] : f.pages[0];
+    assert.equal(notification.silent, silent);
+  }
 });

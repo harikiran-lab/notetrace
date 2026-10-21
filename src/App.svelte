@@ -34,8 +34,10 @@
   import { describeConnectionIssue } from './lib/connection-message.js';
   import { fontTheme } from './stores/settings.js';
   import { applyFontTheme } from './lib/font-themes.js';
+  import { startNotificationSounds } from './lib/notification-sounds.js';
 
   $: applyFontTheme($fontTheme);
+  onMount(startNotificationSounds);
 
   // Sync state — mirrored from the real sync store (dynamically imported).
   // Includes the smart-banner fields (connectionIssue, showErrorBanner) so
