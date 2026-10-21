@@ -1,6 +1,7 @@
+import { FONT_PAIRINGS } from './font-pairings.js';
 const inter = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const system = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-export const FONT_GROUPS = ['defaults', 'sans', 'serif', 'mono'];
+export const FONT_GROUPS = ['pairings', 'defaults', 'sans', 'serif', 'mono'];
 export const FONT_THEMES = [
   { id: 'default', name: 'Original', group: 'defaults', body: inter, title: "'Newsreader', Georgia, serif" },
   { id: 'manrope', name: 'Manrope', group: 'sans', assetSlug: 'manrope', body: "'Manrope', " + inter },
@@ -30,6 +31,7 @@ export const FONT_THEMES = [
   { id: 'jetbrains', name: 'JetBrains Mono', group: 'mono', assetSlug: 'jetbrains', body: "'JetBrains Mono', ui-monospace, monospace" },
   { id: 'inconsolata', name: 'Inconsolata', group: 'mono', assetSlug: 'inconsolata', body: "'Inconsolata', ui-monospace, monospace" },
   { id: 'fira-code', name: 'Fira Code', group: 'mono', assetSlug: 'fira-code', body: "'Fira Code', ui-monospace, monospace" },
+  ...FONT_PAIRINGS,
 ];
 
 export function fontThemeFor(value) {
@@ -40,4 +42,17 @@ export function applyFontTheme(value, root = document.documentElement) {
   const theme = fontThemeFor(value);
   root.style.setProperty('--font-sans', theme.body);
   root.style.setProperty('--font-note-title', theme.title || theme.body);
+  root.style.setProperty('--font-display', theme.display || theme.body);
+  root.style.setProperty('--font-mono', theme.mono || 'ui-monospace, monospace');
+  root.style.setProperty('--mono', theme.mono || 'ui-monospace, monospace');
+}
+
+export function themeFontFamilies(theme) {
+  return [...new Set([theme.body, theme.title, theme.mono].filter(Boolean).map(stack => stack.match(/^['"]([^'"]+)['"]/)?.[1]).filter(Boolean))];
+}
+
+export function applyTextSize(value, root = document.documentElement) {
+  const number = Number(value);
+  const size = Number.isFinite(number) ? Math.max(12, Math.min(22, number)) : 15;
+  root.style.setProperty('--text-scale', String(size / 15));
 }
